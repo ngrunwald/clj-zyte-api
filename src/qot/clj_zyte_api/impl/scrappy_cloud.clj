@@ -94,7 +94,20 @@
                              :method :get})]
       (for [{:keys [fp fdata]} fps]
         (-> {:fingerprint fp}
-            (cond-> fdata (assoc :fingerprint-data fdata)))))))
+            (cond-> fdata (assoc :fingerprint-data fdata))))))
+  (hcf-delete-batch-requests
+    [_ coordinates ids]
+    (let [full-coords (utils/assoc-default-val coordinates :project-id project-id)
+          url (str zyte-storage-root (make-hcf-path full-coords) "/q/deleted")
+          body (->> ids
+                    (map name)
+                    (map json/encode)
+                    (str/join "\n"))
+          res (send-request {:api-key api-key}
+                            {:url url
+                             :method :post
+                             :body body})]
+      true)))
 
 (defn make-scrappy-cloud-client
   [{:keys [project-id api-key]}]
