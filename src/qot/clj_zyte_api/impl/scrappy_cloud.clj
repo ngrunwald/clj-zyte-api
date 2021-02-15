@@ -71,7 +71,8 @@
     [_ coordinates]
     (let [full-coords (utils/assoc-default-val coordinates :project-id project-id)
           url (str zyte-storage-root (make-hcf-path full-coords))]
-      (send-request {:api-key api-key} {:url url :method :delete})
+      (send-request {:api-key api-key}
+                    {:url url :method :delete})
       true))
   (hcf-get-batch-requests
     [_ coordinates {:keys [limit]}]
@@ -107,7 +108,25 @@
                             {:url url
                              :method :post
                              :body body})]
-      true)))
+      true))
+  (hcf-get-slots
+    [_ coordinates]
+    (let [full-coords (utils/assoc-default-val coordinates :project-id project-id)
+          url (str zyte-storage-root (make-hcf-path full-coords) "/list")
+          res (send-request {:api-key api-key}
+                            {:url url
+                             :as :json
+                             :method :get})]
+      res))
+    (hcf-get-frontiers
+    [_ coordinates]
+    (let [full-coords (utils/assoc-default-val coordinates :project-id project-id)
+          url (str zyte-storage-root (make-hcf-path full-coords) "/list")
+          res (send-request {:api-key api-key}
+                            {:url url
+                             :as :json
+                             :method :get})]
+      res)))
 
 (defn make-scrappy-cloud-client
   [{:keys [project-id api-key]}]

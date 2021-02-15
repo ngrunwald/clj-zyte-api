@@ -20,3 +20,9 @@
   (hcf-get-fingerprints [impl coordinates])
   (hcf-get-slots [impl coordinates])
   (hcf-get-frontiers [impl coordinates]))
+
+(defn hcf-truncate-frontier
+  [impl coordinates]
+  (let [slots (hcf-get-slots impl coordinates)
+        deleted (doall (for [slot slots] (hcf-delete-slot impl (assoc coordinates :slot slot))))]
+    {:slots-deleted (count deleted)}))

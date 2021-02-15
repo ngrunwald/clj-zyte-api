@@ -5,7 +5,7 @@
             [qot.clj-zyte-api.impl.memory :as mem]
             [qot.clj-zyte-api.impl.scrappy-cloud :as sc]))
 
-(deftest api
+(deftest frontier-api
   (let [mem-client (mem/make-memory-client {:project-id "498050"})
         cloud-client (sc/make-scrappy-cloud-client {:project-id "498050"
                                                     :api-key (System/getenv "ZYTE_API_KEY")})]
@@ -19,7 +19,9 @@
           req4 {:fingerprint "https://example.com/4" :priority 2
                 :fingerprint-data {:fd "toobad"}
                 :queue-data {:qd "toogood"}}
-          coords {:frontier "frontier1" :slot (str "api-test-slot-" (System/currentTimeMillis))}]
+          frontier "frontier1"
+          slot (str "api-test-slot-" (System/currentTimeMillis))
+          coords {:frontier frontier :slot slot}]
       (doseq [[client client-name] [[cloud-client "scrappy-cloud-client"]
                                     [mem-client "memory-client"]
                                     ]]
@@ -45,10 +47,17 @@
                   {:requests [{:fingerprint "https://example.com/3"}]}])
           (facts "ack requests tests"
                  (hcf-delete-batch-requests client coords (map :batch-id batch)) => true
-                 (count (hcf-get-batch-requests client coords {:limit 4})) => (partial = 1)
-                 (count (hcf-get-fingerprints client coords))  => (partial = 4)
-                 (hcf-add-requests client coords [req1]) => {:requests-added 0}
-                 (count (hcf-get-fingerprints client coords))  => (partial = 4)
-                 (count (hcf-get-batch-requests client coords {:limit 4})) => (partial = 1))
-          )
+                 (count (hcf-get-batch-requests client coords {:limit 4})) => 1
+                 (count (hcf-get-fingerprints client coords))  => 4))
+        (facts "cannot add reqs with existing fingerprints even after delete of req"
+               (hcf-add-requests client coords [req1]) => {:requests-added 0}
+               (count (hcf-get-fingerprints client coords))  => 4
+               (count (hcf-get-batch-requests client coords {:limit 4})) => 1)
+        (fact "test getting slots"
+              (into #{} (hcf-get-slots client (select-keys coords [:frontier]))) => #(contains? % slot))
+        (fact "test getting frontiers"
+              (into #{} (hcf-get-frontiers client {})) => #(contains? % frontier))
+        (facts "test deleting slot"
+               (hcf-delete-slot client coords) => true
+               (into #{} (hcf-get-slots client (select-keys coords [:frontier]))) =not=> #(contains? % slot))
         ))))

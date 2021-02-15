@@ -35,7 +35,8 @@
          {:requests-added (count fps)}))))
   (hcf-delete-slot
     [_ coordinates]
-    (let [path (make-hcf-path coordinates)]
+    (let [full-coords (utils/assoc-default-val coordinates :project-id project-id)
+          path (make-hcf-path full-coords)]
       (dosync
        (doseq [db [db-fp db-req]]
          (alter db
@@ -71,7 +72,17 @@
       (dosync
        (alter db-req (fn [db-val ids] (update-in db-val path #(apply dissoc %1 %2) ids))
               ids))
-      true)))
+      true))
+  (hcf-get-slots
+    [_ coordinates]
+    (let [full-coords (utils/assoc-default-val coordinates :project-id project-id)
+          path (make-hcf-path full-coords)]
+      (keys (get-in @db-req path))))
+  (hcf-get-frontiers
+    [_ coordinates]
+    (let [full-coords (utils/assoc-default-val coordinates :project-id project-id)
+          path (make-hcf-path full-coords)]
+      (keys (get-in @db-req path)))))
 
 (defn make-memory-client
   [{:keys [project-id]}]
