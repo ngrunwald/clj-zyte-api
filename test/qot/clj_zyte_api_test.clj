@@ -60,4 +60,6 @@
         (facts "test deleting slot"
                (hcf-delete-slot client coords) => true
                (into #{} (hcf-get-slots client (select-keys coords [:frontier]))) =not=> #(contains? % slot))
-        ))))
+        ))
+    (fact "can close scrappy client"
+          (.close cloud-client) => any)))
