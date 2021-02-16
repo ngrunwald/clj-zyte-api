@@ -17,12 +17,19 @@
   (hcf-delete-slot [impl coordinates])
   (hcf-get-batch-requests [impl coordinates options])
   (hcf-delete-batch-requests [impl coordinates ids])
-  (hcf-get-fingerprints [impl coordinates])
-  (hcf-get-slots [impl coordinates])
-  (hcf-get-frontiers [impl coordinates]))
+  (hcf-list-fingerprints [impl coordinates])
+  (hcf-list-slots [impl coordinates])
+  (hcf-list-frontiers [impl coordinates]))
 
 (defn hcf-truncate-frontier
   [impl coordinates]
-  (let [slots (hcf-get-slots impl coordinates)
+  (let [slots (hcf-list-slots impl coordinates)
         deleted (doall (for [slot slots] (hcf-delete-slot impl (assoc coordinates :slot slot))))]
     {:slots-deleted (count deleted)}))
+
+(defprotocol ZyteCollection
+  (coll-upsert-records [impl coll data])
+  (coll-get-record [impl coll k])
+  (coll-delete-record [impl coll k])
+  (coll-list-records [impl coll])
+  (coll-list-collections [impl]))

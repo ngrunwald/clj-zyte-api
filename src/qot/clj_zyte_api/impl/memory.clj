@@ -55,7 +55,7 @@
              {:batch-id (pr-str {:bid [fingerprint]})
               :requests (list (select-keys req [:fingerprint :queue-data]))})
            reqs)))
-  (hcf-get-fingerprints
+  (hcf-list-fingerprints
     [_ coordinates]
     (let [full-coords (utils/assoc-default-val coordinates :project-id project-id)
           path (make-hcf-path full-coords)
@@ -73,12 +73,12 @@
        (alter db-req (fn [db-val ids] (update-in db-val path #(apply dissoc %1 %2) ids))
               ids))
       true))
-  (hcf-get-slots
+  (hcf-list-slots
     [_ coordinates]
     (let [full-coords (utils/assoc-default-val coordinates :project-id project-id)
           path (make-hcf-path full-coords)]
       (keys (get-in @db-req path))))
-  (hcf-get-frontiers
+  (hcf-list-frontiers
     [_ coordinates]
     (let [full-coords (utils/assoc-default-val coordinates :project-id project-id)
           path (make-hcf-path full-coords)]

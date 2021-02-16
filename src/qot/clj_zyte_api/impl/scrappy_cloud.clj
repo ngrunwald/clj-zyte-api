@@ -90,7 +90,7 @@
         {:batch-id id :requests (map (fn [[fp data]] (-> {:fingerprint fp}
                                                          (cond-> data (assoc :queue-data data))))
                                      requests)})))
-  (hcf-get-fingerprints
+  (hcf-list-fingerprints
     [this coordinates]
     (let [full-coords (utils/assoc-default-val coordinates :project-id project-id)
           url (str zyte-storage-root (make-hcf-path full-coords) "/f")
@@ -113,7 +113,7 @@
                      :method :post
                      :body body})
       true))
-  (hcf-get-slots
+  (hcf-list-slots
     [this coordinates]
     (let [full-coords (utils/assoc-default-val coordinates :project-id project-id)
           url (str zyte-storage-root (make-hcf-path full-coords) "/list")
@@ -122,7 +122,7 @@
                              :as :json
                              :method :get})]
       res))
-  (hcf-get-frontiers
+  (hcf-list-frontiers
     [this coordinates]
     (let [full-coords (utils/assoc-default-val coordinates :project-id project-id)
           url (str zyte-storage-root (make-hcf-path full-coords) "/list")

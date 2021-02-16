@@ -33,7 +33,7 @@
                (hcf-get-batch-requests client coords {:limit 1})
                =not=> {:fingerprint "https://example.com/1" :queue-data {:added true}})
         (facts "test getting fingerprints"
-               (hcf-get-fingerprints client coords) => [{:fingerprint "https://example.com/1"}
+               (hcf-list-fingerprints client coords) => [{:fingerprint "https://example.com/1"}
                                                         {:fingerprint "https://example.com/2"}
                                                         {:fingerprint "https://example.com/3"
                                                          :fingerprint-data {:fd "bad"}}
@@ -48,18 +48,18 @@
           (facts "ack requests tests"
                  (hcf-delete-batch-requests client coords (map :batch-id batch)) => true
                  (count (hcf-get-batch-requests client coords {:limit 4})) => 1
-                 (count (hcf-get-fingerprints client coords))  => 4))
+                 (count (hcf-list-fingerprints client coords))  => 4))
         (facts "cannot add reqs with existing fingerprints even after delete of req"
                (hcf-add-requests client coords [req1]) => {:requests-added 0}
-               (count (hcf-get-fingerprints client coords))  => 4
+               (count (hcf-list-fingerprints client coords))  => 4
                (count (hcf-get-batch-requests client coords {:limit 4})) => 1)
         (fact "test getting slots"
-              (into #{} (hcf-get-slots client (select-keys coords [:frontier]))) => #(contains? % slot))
+              (into #{} (hcf-list-slots client (select-keys coords [:frontier]))) => #(contains? % slot))
         (fact "test getting frontiers"
-              (into #{} (hcf-get-frontiers client {})) => #(contains? % frontier))
+              (into #{} (hcf-list-frontiers client {})) => #(contains? % frontier))
         (facts "test deleting slot"
                (hcf-delete-slot client coords) => true
-               (into #{} (hcf-get-slots client (select-keys coords [:frontier]))) =not=> #(contains? % slot))
+               (into #{} (hcf-list-slots client (select-keys coords [:frontier]))) =not=> #(contains? % slot))
         ))
     (fact "can close scrappy client"
           (.close cloud-client) => any)))
