@@ -1,6 +1,5 @@
 (ns qot.clj-zyte-api.impl.scrappy-cloud
-  (:require [clj-http.client :as http]
-            [clj-http.conn-mgr :as mgr]
+  (:require [org.httpkit.client :as ohttp]
             [qot.clj-zyte-api :as api]
             [qot.clj-zyte-api.utils :as utils]
             [clojure.spec.alpha :as s]
@@ -9,39 +8,37 @@
 
 (def zyte-storage-root "https://storage.scrapinghub.com")
 
-(s/def :zyte/project-id (s/and string? #(re-matches #"\d+" %)))
-(s/def :zyte-frontier/frontier string?)
-(s/def :zyte-frontier/slot string?)
-(s/def :zyte-frontier/slot-coordinates (s/keys :req-un [:zyte-frontier/frontier
-                                                        :zyte-frontier/slot]
-                                               :opt-un [:zyte/project-id]))
-(s/def :zyte-frontier/frontier-coordinates (s/keys :req-un [:zyte-frontier/frontier]
-                                                   :opt-un [:zyte/project-id]))
-(s/def :zyte/project-coordinates (s/keys :opt-un [:zyte/project-id]))
-
 (defn parse-json-lines
   [s]
   (->> (str/split s #"\n")
        (map #(json/decode % true))))
 
 (defn send-request
-  [{:keys [api-key conn-mgr]} request]
+  [{:keys [api-key client]} request]
   (tap> request)
-  (let [full-request (merge {:headers {:Accept "application/json"}
+  (let [full-request (merge {:headers {"accept" "application/json"}
                              :basic-auth (str api-key ":")
-                             :connection-manager conn-mgr}
+                             :client client
+                             :as :text}
                             request)
-        result (http/request full-request)]
+        result @(ohttp/request full-request)]
     (tap> result)
-    (if (:as request)
-      (:body result)
-      (parse-json-lines (:body result)))))
+    (cond
+      (= :json (:coerce request)) (json/decode (:body result) true)
+      (= :json-lines (:coerce request)) (parse-json-lines (:body result))
+      :else (:body result))))
 
 (s/fdef make-hcf-path
   :args (s/cat :coordinates (s/or :slot-coordinates :zyte-frontier/slot-coordinates
                                   :frontier-coordinates :zyte-frontier/frontier-coordinates
                                   :project-coordinates :zyte/project-coordinates))
   :ret string?)
+
+(defn make-coll-path
+  [{:keys [project-id collection type] :as coords}]
+  (cond (and project-id collection type) (format "/collections/%s/%s/%s" project-id (name type) (name collection))
+        project-id (format "/collections/%s" project-id)
+        :else (throw (ex-info "Insufficient Collection API coordinates given" {:coordinates coords}))))
 
 (defn make-hcf-path
   [{:keys [project-id frontier slot] :as coords}]
@@ -50,9 +47,9 @@
         project-id (format "/hcf/%s" project-id)
         :else (throw (ex-info "Insufficient Frontier API coordinates given" {:coordinates coords}))))
 
-(defrecord ScrappyCloudClient [api-key project-id conn-mgr]
+(defrecord ScrappyCloudClient [api-key project-id client]
   java.lang.AutoCloseable
-  (close [this] (.close conn-mgr))
+  (close [_] (.stop client))
   api/ZyteHcf
   (hcf-add-requests
     [this coords requests]
@@ -66,7 +63,7 @@
                       (json/encode)))
           req {:url url
                :method :post
-               :as :json
+               :coerce :json
                :body (str/join "\n" lines)
                :content-type :json}
           {:keys [newcount]} (send-request this req)]
@@ -76,7 +73,9 @@
     (let [full-coords (utils/assoc-default-val coordinates :project-id project-id)
           url (str zyte-storage-root (make-hcf-path full-coords))]
       (send-request this
-                    {:url url :method :delete})
+                    {:url url
+                     :method :delete
+                     :coerce :json-lines})
       true))
   (hcf-get-batch-requests
     [this coordinates {:keys [limit]}]
@@ -85,7 +84,8 @@
           results (send-request this
                                 {:url url
                                  :method :get
-                                 :query-params (when limit {:mincount limit})})]
+                                 :query-params (when limit {:mincount limit})
+                                 :coerce :json-lines})]
       (for [{:keys [id requests]} results]
         {:batch-id id :requests (map (fn [[fp data]] (-> {:fingerprint fp}
                                                          (cond-> data (assoc :queue-data data))))
@@ -96,7 +96,9 @@
           url (str zyte-storage-root (make-hcf-path full-coords) "/f")
           fps (send-request this
                             {:url url
-                             :method :get})]
+                             :method :get
+                             :coerce :json-lines})]
+      (println "FPS" fps)
       (for [{:keys [fp fdata]} fps]
         (-> {:fingerprint fp}
             (cond-> fdata (assoc :fingerprint-data fdata))))))
@@ -111,7 +113,8 @@
       (send-request this
                     {:url url
                      :method :post
-                     :body body})
+                     :body body
+                     :coerce :json-lines})
       true))
   (hcf-list-slots
     [this coordinates]
@@ -119,7 +122,7 @@
           url (str zyte-storage-root (make-hcf-path full-coords) "/list")
           res (send-request this
                             {:url url
-                             :as :json
+                             :coerce :json
                              :method :get})]
       res))
   (hcf-list-frontiers
@@ -128,10 +131,59 @@
           url (str zyte-storage-root (make-hcf-path full-coords) "/list")
           res (send-request this
                             {:url url
-                             :as :json
+                             :coerce :json
                              :method :get})]
-      res)))
+      res))
+  api/ZyteCollection
+  (coll-upsert-records
+    [this coll data]
+    (let [full-coll (utils/assoc-default-val coll :project-id project-id)
+          url (str zyte-storage-root (make-coll-path full-coll))
+          body (->> data
+                    (map json/encode)
+                    (str/join "\n"))]
+      (send-request this
+                    {:url url
+                     :body body
+                     :method :post})
+      true))
+  (coll-get-record
+    [this coll k]
+    (let [full-coll (utils/assoc-default-val coll :project-id project-id)
+          url (str zyte-storage-root (make-coll-path full-coll) "/" k)]
+      (first (send-request this
+                           {:url url
+                            :method :get
+                            :coerce :json}))))
+  (coll-delete-record
+    [this coll k]
+    (let [full-coll (utils/assoc-default-val coll :project-id project-id)
+          url (str zyte-storage-root (make-coll-path full-coll) "/" k)]
+      (send-request this
+                    {:url url
+                     :method :delete
+                     :coerce :json})
+      true))
+  (coll-get-records
+    [this coll query]
+    (let [full-coll (utils/assoc-default-val coll :project-id project-id)
+          url (str zyte-storage-root (make-coll-path full-coll))]
+      (send-request this
+                    {:url url
+                     :query-params query
+                     :method :get
+                     :coerce :json})))
+  (coll-delete-records
+    [this coll query]
+    (let [full-coll (utils/assoc-default-val coll :project-id project-id)
+          url (str zyte-storage-root (make-coll-path full-coll))]
+      (send-request this
+                    {:url url
+                     :query-params query
+                     :method :delete
+                     :coerce :json})
+      true)))
 
 (defn make-scrappy-cloud-client
   [{:keys [project-id api-key]}]
-  (ScrappyCloudClient. api-key project-id (mgr/make-reusable-conn-manager {})))
+  (ScrappyCloudClient. api-key project-id (ohttp/make-client {})))

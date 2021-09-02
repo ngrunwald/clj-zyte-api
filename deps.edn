@@ -1,7 +1,10 @@
 {:paths ["src" "resources"]
- :deps {org.clojure/clojure {:mvn/version "1.10.2"}
-        clj-http/clj-http {:mvn/version "3.12.1"}
-        cheshire/cheshire {:mvn/version "5.10.0"}}
+ :deps {org.clojure/clojure {:mvn/version "1.10.3"}
+        clj-http/clj-http {:mvn/version "3.12.3"}
+        http-kit/http-kit {:mvn/version "2.5.3"}
+        cheshire/cheshire {:mvn/version "5.10.1"}
+        com.fulcrologic/guardrails {:mvn/version "1.1.5"}
+        org.clojure/core.async {:mvn/version "1.3.618"}}
  :aliases
  {:test {:extra-paths ["test"]
          :extra-deps {org.clojure/test.check {:mvn/version "1.1.0"}
@@ -15,7 +18,7 @@
   :jar {:extra-deps {seancorfield/depstar {:mvn/version "1.1.133"}}
         :exec-fn hf.depstar/jar
         :exec-args {:jar "clj-zyte-api.jar"}}
-  :install {:extra-deps {slipset/deps-deploy {:mvn/version "0.1.1"}}
+  :install {:extra-deps {slipset/deps-deploy {:mvn/version "0.1.5"}}
             :main-opts ["-m" "deps-deploy.deps-deploy" "install" "clj-zyte-api.jar"]}
-  :deploy {:extra-deps {slipset/deps-deploy {:mvn/version "0.1.1"}}
+  :deploy {:extra-deps {slipset/deps-deploy {:mvn/version "0.1.5"}}
            :main-opts ["-m" "deps-deploy.deps-deploy" "deploy" "clj-zyte-api.jar"]}}}
