@@ -4,7 +4,8 @@
             [qot.clj-zyte-api :as api]
             [qot.clj-zyte-api.impl.memory :as mem]
             [qot.clj-zyte-api.impl.scrappy-cloud :as sc]
-            [com.fulcrologic.guardrails.core]))
+            ;; [com.fulcrologic.guardrails.core]
+            ))
 
 (deftest frontier-api
   (let [mem-client (mem/make-memory-client {:project-id "498050"})

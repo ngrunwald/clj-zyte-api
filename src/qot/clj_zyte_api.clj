@@ -1,45 +1,46 @@
 (ns qot.clj-zyte-api
-  (:require [com.fulcrologic.guardrails.core :refer [>defn >def >fdef | ? =>]]
-            [clojure.spec.alpha :as s]))
+  ;; (:require [com.fulcrologic.guardrails.core :refer [>defn >def >fdef | ? =>]]
+  ;;           [clojure.spec.alpha :as s])
+  )
 
 (declare ZyteHcf)
 
-(>def :zyte/project-id (s/and string? #(re-matches #"\d+" %)))
-(>def :zyte/project-coordinates (s/keys :opt-un [:zyte/project-id]))
-(>def :zyte/client #(extends? ZyteHcf %))
+;; (>def :zyte/project-id (s/and string? #(re-matches #"\d+" %)))
+;; (>def :zyte/project-coordinates (s/keys :opt-un [:zyte/project-id]))
+;; (>def :zyte/client #(extends? ZyteHcf %))
 
-(>def :zyte-frontier/frontier string?)
-(>def :zyte-frontier/slot string?)
-(>def :zyte-frontier/frontier-coordinates
-      (s/merge
-       :zyte/project-coordinates
-       (s/keys :req-un [:zyte-frontier/frontier])))
-(>def :zyte-frontier/slot-coordinates
-      (s/merge :zyte-frontier/frontier-coordinates
-               (s/keys :req-un [:zyte-frontier/slot])))
+;; (>def :zyte-frontier/frontier string?)
+;; (>def :zyte-frontier/slot string?)
+;; (>def :zyte-frontier/frontier-coordinates
+;;       (s/merge
+;;        :zyte/project-coordinates
+;;        (s/keys :req-un [:zyte-frontier/frontier])))
+;; (>def :zyte-frontier/slot-coordinates
+;;       (s/merge :zyte-frontier/frontier-coordinates
+;;                (s/keys :req-un [:zyte-frontier/slot])))
 
-(>def :zyte-frontier/requests-added pos-int?)
-(>def :zyte-frontier/requests-return (s/keys :req-un [:zyte-frontier/requests-added]))
+;; (>def :zyte-frontier/requests-added pos-int?)
+;; (>def :zyte-frontier/requests-return (s/keys :req-un [:zyte-frontier/requests-added]))
 
-(>def :zyte-frontier/fingerprint string?)
-(>def :zyte-frontier/queue-data map?)
-(>def :zyte-frontier/fingerprint-data map?)
-(>def :zyte-frontier/priority nat-int?)
+;; (>def :zyte-frontier/fingerprint string?)
+;; (>def :zyte-frontier/queue-data map?)
+;; (>def :zyte-frontier/fingerprint-data map?)
+;; (>def :zyte-frontier/priority nat-int?)
 
 
-(>def :zyte-frontier/request (s/keys :req-un [:zyte-frontier/fingerprint]
-                                     :opt-un [:zyte-frontier/queue-data
-                                              :zyte-frontier/fingerprint-data
-                                              :zyte-frontier/priority]))
+;; (>def :zyte-frontier/request (s/keys :req-un [:zyte-frontier/fingerprint]
+;;                                      :opt-un [:zyte-frontier/queue-data
+;;                                               :zyte-frontier/fingerprint-data
+;;                                               :zyte-frontier/priority]))
 
-(>fdef hcf-add-requests
-       [impl coordinates requests]
-       [:zyte/client :zyte-frontier/slot-coordinates (s/coll-of :zyte-frontier/requestx)
-        => :zyte-frontier/requests-return])
+;; (>fdef hcf-add-requests
+;;        [impl coordinates requests]
+;;        [:zyte/client :zyte-frontier/slot-coordinates (s/coll-of :zyte-frontier/requestx)
+;;         => :zyte-frontier/requests-return])
 
-(>fdef hcf-delete-slot
-       [impl coordinates]
-       [:zyte/client :zyte-frontier/slot-coordinates => int?])
+;; (>fdef hcf-delete-slot
+;;        [impl coordinates]
+;;        [:zyte/client :zyte-frontier/slot-coordinates => int?])
 
 (defprotocol ZyteHcf
   (hcf-add-requests [impl coordinates requests])

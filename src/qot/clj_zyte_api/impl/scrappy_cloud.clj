@@ -2,7 +2,7 @@
   (:require [org.httpkit.client :as ohttp]
             [qot.clj-zyte-api :as api]
             [qot.clj-zyte-api.utils :as utils]
-            [clojure.spec.alpha :as s]
+            ;; [clojure.spec.alpha :as s]
             [clojure.string :as str]
             [cheshire.core :as json]))
 
@@ -28,11 +28,11 @@
       (= :json-lines (:coerce request)) (parse-json-lines (:body result))
       :else (:body result))))
 
-(s/fdef make-hcf-path
-  :args (s/cat :coordinates (s/or :slot-coordinates :zyte-frontier/slot-coordinates
-                                  :frontier-coordinates :zyte-frontier/frontier-coordinates
-                                  :project-coordinates :zyte/project-coordinates))
-  :ret string?)
+;; (s/fdef make-hcf-path
+;;   :args (s/cat :coordinates (s/or :slot-coordinates :zyte-frontier/slot-coordinates
+;;                                   :frontier-coordinates :zyte-frontier/frontier-coordinates
+;;                                   :project-coordinates :zyte/project-coordinates))
+;;   :ret string?)
 
 (defn make-coll-path
   [{:keys [project-id collection type] :as coords}]
@@ -98,7 +98,6 @@
                             {:url url
                              :method :get
                              :coerce :json-lines})]
-      (println "FPS" fps)
       (for [{:keys [fp fdata]} fps]
         (-> {:fingerprint fp}
             (cond-> fdata (assoc :fingerprint-data fdata))))))

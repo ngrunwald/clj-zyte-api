@@ -1,7 +1,7 @@
 (ns qot.clj-zyte-api.impl.memory
   (:require [qot.clj-zyte-api :as api]
             [qot.clj-zyte-api.utils :as utils]
-            [clojure.spec.alpha :as s]
+            ;; [clojure.spec.alpha :as s]
             [clojure.edn :as edn]))
 
 (defn make-hcf-path
