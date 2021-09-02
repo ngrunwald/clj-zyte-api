@@ -48,8 +48,9 @@
         :else (throw (ex-info "Insufficient Frontier API coordinates given" {:coordinates coords}))))
 
 (defrecord ScrappyCloudClient [api-key project-id client]
-  java.lang.AutoCloseable
-  (close [_] (.stop client))
+  #?@(:bb  []
+      :clj [java.lang.AutoCloseable
+            (close [_] (.stop client))])
   api/ZyteHcf
   (hcf-add-requests
     [this coords requests]
