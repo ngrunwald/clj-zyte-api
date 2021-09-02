@@ -79,8 +79,9 @@
                      :coerce :json-lines})
       true))
   (hcf-get-batch-requests
-    [this coordinates {:keys [limit]}]
-    (let [full-coords (utils/assoc-default-val coordinates :project-id project-id)
+    [this coordinates opts]
+    (let [{:keys [limit]} opts
+          full-coords (utils/assoc-default-val coordinates :project-id project-id)
           url (str zyte-storage-root (make-hcf-path full-coords) "/q")
           results (send-request this
                                 {:url url
