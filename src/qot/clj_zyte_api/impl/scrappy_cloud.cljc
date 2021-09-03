@@ -14,19 +14,21 @@
        (map #(json/decode % true))))
 
 (defn send-request
-  [{:keys [api-key client]} request]
-  (tap> request)
+  [{:keys [api-key client]} {:keys [url] :as request}]
   (let [full-request (merge {:headers {"accept" "application/json"}
                              :basic-auth (str api-key ":")
                              :client client
                              :as :text}
                             request)
-        result @(ohttp/request full-request)]
-    (tap> result)
-    (cond
-      (= :json (:coerce request)) (json/decode (:body result) true)
-      (= :json-lines (:coerce request)) (parse-json-lines (:body result))
-      :else (:body result))))
+        {:keys [status body] :as result} @(ohttp/request full-request)]
+    (if (re-find #"^2" (str status))
+      (cond
+        (= :json (:coerce request)) (json/decode (:body result) true)
+        (= :json-lines (:coerce request)) (parse-json-lines (:body result))
+        :else (:body result))
+      (throw (ex-info (format "Error calling Zyte API at %s Code %s" url status)
+                      {:url url
+                       :status status})))))
 
 ;; (s/fdef make-hcf-path
 ;;   :args (s/cat :coordinates (s/or :slot-coordinates :zyte-frontier/slot-coordinates

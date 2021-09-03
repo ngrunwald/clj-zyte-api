@@ -35,11 +35,11 @@
                =not=> {:fingerprint "https://example.com/1" :queue-data {:added true}})
         (facts "test getting fingerprints"
                (api/hcf-list-fingerprints client coords) => [{:fingerprint "https://example.com/1"}
-                                                        {:fingerprint "https://example.com/2"}
-                                                        {:fingerprint "https://example.com/3"
-                                                         :fingerprint-data {:fd "bad"}}
-                                                        {:fingerprint "https://example.com/4"
-                                                         :fingerprint-data {:fd "toobad"}}])
+                                                             {:fingerprint "https://example.com/2"}
+                                                             {:fingerprint "https://example.com/3"
+                                                              :fingerprint-data {:fd "bad"}}
+                                                             {:fingerprint "https://example.com/4"
+                                                              :fingerprint-data {:fd "toobad"}}])
         (let [batch (api/hcf-get-batch-requests client coords {:limit 3})]
           (facts "get requests tests"
                   batch =in=>
