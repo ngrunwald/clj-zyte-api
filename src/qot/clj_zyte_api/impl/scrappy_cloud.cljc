@@ -14,21 +14,30 @@
        (map #(json/decode % true))))
 
 (defn send-request
-  [{:keys [api-key client]} {:keys [url] :as request}]
+  [{:keys [api-key client] :as this} {:keys [url] ::keys [no-retry?] :as request}]
   (let [full-request (merge {:headers {"accept" "application/json"}
                              :basic-auth (str api-key ":")
-                             :client client
+                             :client @client
                              :as :text}
                             request)
-        {:keys [status body] :as result} @(ohttp/request full-request)]
-    (if (re-find #"^2" (str status))
+        {:keys [status body error] :as result} @(ohttp/request full-request)]
+    (cond
+      (and error
+           (not no-retry?)
+           (= (.getMessage error) "Cannot kickstart, the connection is broken or closed"))
+      (do
+        (reset! client (ohttp/make-client {}))
+        (send-request this (assoc request ::no-retry? true)))
+      (and (not error) (re-find #"^2" (str status)))
       (cond
         (= :json (:coerce request)) (json/decode (:body result) true)
         (= :json-lines (:coerce request)) (parse-json-lines (:body result))
         :else (:body result))
-      (throw (ex-info (format "Error calling Zyte API at %s Code %s" url status)
+      :else
+      (throw (ex-info (format "Error calling Zyte API at %s Code [%s]" url status)
                       {:url url
-                       :status status})))))
+                       :status status
+                       :error error})))))
 
 ;; (s/fdef make-hcf-path
 ;;   :args (s/cat :coordinates (s/or :slot-coordinates :zyte-frontier/slot-coordinates
@@ -52,7 +61,7 @@
 (defrecord ScrappyCloudClient [api-key project-id client]
   #?@(:bb  []
       :clj [java.lang.AutoCloseable
-            (close [_] (.stop client))])
+            (close [_] (.stop @client))])
   api/ZyteHcf
   (hcf-add-requests
     [this coords requests]
@@ -189,4 +198,4 @@
 
 (defn make-scrappy-cloud-client
   [{:keys [project-id api-key]}]
-  (ScrappyCloudClient. api-key project-id (ohttp/make-client {})))
+  (ScrappyCloudClient. api-key project-id (atom (ohttp/make-client {}))))
