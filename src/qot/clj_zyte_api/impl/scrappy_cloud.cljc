@@ -24,7 +24,7 @@
     (cond
       (and error
            (not no-retry?)
-           (= (.getMessage error) "Cannot kickstart, the connection is broken or closed"))
+           (= (ex-message error) "Cannot kickstart, the connection is broken or closed"))
       (do
         (reset! client (ohttp/make-client {}))
         (send-request this (assoc request ::no-retry? true)))
