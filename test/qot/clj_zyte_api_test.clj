@@ -6,8 +6,8 @@
             ))
 
 (deftest frontier-api
-  (let [client (api/make-scrappy-cloud-client {:project-id "498050"
-                                                :api-key (System/getenv "ZYTE_API_KEY")})]
+  (let [client (api/make-client {:project-id "498050"
+                                 :api-key (System/getenv "ZYTE_API_KEY")})]
     (facts "client creation"
            client => map?)
 
@@ -58,8 +58,8 @@
              (into #{} (api/hcf-list-slots client (select-keys coords [:frontier]))) =not=> #(contains? % slot))))
 
   (deftest collection-api
-    (let [client (api/make-scrappy-cloud-client {:project-id "498050"
-                                                  :api-key (System/getenv "ZYTE_API_KEY")})
+    (let [client (api/make-client {:project-id "498050"
+                                   :api-key (System/getenv "ZYTE_API_KEY")})
           coll-name "colltest"
           coll-type :s
           rec1 {:_key "rec1" :foo "bar"}

@@ -4,11 +4,10 @@
             [qot.clj-zyte-api.utils :as utils]
             ;; [clojure.spec.alpha :as s]
             [clojure.string :as str]
-            [cheshire.core :as json])
+            [cheshire.core :as json]
+            [secret.keeper :as keeper])
   ;; (:require [com.fulcrologic.guardrails.core :refer [>defn >def >fdef | ? =>]]
 )
-
-(declare ZyteHcf)
 
 ;; (>def :zyte/project-id (s/and string? #(re-matches #"\d+" %)))
 ;; (>def :zyte/project-coordinates (s/keys :opt-un [:zyte/project-id]))
@@ -55,9 +54,9 @@
        (map #(json/decode % true))))
 
 (defn send-request
-  [{:keys [api-key http-client] :as client} {:keys [url] ::keys [no-retry?] :as request}]
+  [{:keys [auth http-client] :as client} {:keys [url] ::keys [no-retry?] :as request}]
   (let [full-request (merge {:headers {"accept" "application/json"}
-                             :basic-auth (str api-key ":")
+                             :basic-auth (str (:api-key (keeper/data auth)) ":")
                              :client @http-client
                              :as :text}
                             request)
@@ -78,7 +77,8 @@
       (throw (ex-info (format "Error calling Zyte API at %s Code [%s]" url status)
                       {:url url
                        :status status
-                       :error error})))))
+                       :error error
+                       :message body})))))
 
 ;; (s/fdef make-hcf-path
 ;;   :args (s/cat :coordinates (s/or :slot-coordinates :zyte-frontier/slot-coordinates
@@ -240,9 +240,10 @@
                   :coerce :json})
    true))
 
-(defn make-scrappy-cloud-client
+(defn make-client
   [{:keys [project-id api-key]}]
-  {:api-key api-key :project-id project-id :http-client (atom (ohttp/make-client {}))})
+  {:auth (keeper/make-secret {:api-key api-key}) :project-id project-id
+   :http-client (atom (ohttp/make-client {}))})
 
 (defn hcf-truncate-frontier
   [impl coordinates]

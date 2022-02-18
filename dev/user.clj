@@ -5,5 +5,5 @@
 
 (defn make-cc-client
   []
-  (api/make-scrappy-cloud-client {:project-id scrappy-cloud-test-project-id
-                                   :api-key (System/getenv "ZYTE_API_KEY")}))
+  (api/make-client {:project-id scrappy-cloud-test-project-id
+                    :api-key (System/getenv "ZYTE_API_KEY")}))
